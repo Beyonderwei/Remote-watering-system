@@ -16,9 +16,6 @@
 #define PUMP_IO_BASE    GPIOA1_BASE
 #define PUMP_IO      GPIO_PIN_1
 
-static void pump_IO_config(void);
-void pump_init(void);
-void pump_open(void);
-void pump_close(void);
+void WaterTheFlowers(void);
 
 #endif /* PUMP_PUMP_H_ */

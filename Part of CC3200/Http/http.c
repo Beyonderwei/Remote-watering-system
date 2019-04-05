@@ -7,9 +7,9 @@
 
 #include "http.h"
 
-extern unsigned char  g_buff[MAX_BUFF_SIZE+1];
-extern char flowerStatusData[63];
-unsigned long  g_ulDestinationIP; // IP address of destination server
+extern unsigned char g_buff[200];
+extern char flowerStatusData[200];
+unsigned long g_ulDestinationIP; // IP address of destination server
 
 //*****************************************************************************
 //
@@ -23,27 +23,25 @@ unsigned long  g_ulDestinationIP; // IP address of destination server
 int FlushHTTPResponse(HTTPCli_Handle httpClient)
 {
     const char *ids[2] = {
-                            HTTPCli_FIELD_NAME_CONNECTION, /* App will get connection header value. all others will skip by lib */
-                            NULL
-                         };
+    HTTPCli_FIELD_NAME_CONNECTION, /* App will get connection header value. all others will skip by lib */
+                           NULL };
     char buf[128];
     int id;
     int len = 1;
     bool moreFlag = 0;
     char ** prevRespFilelds = NULL;
 
-
     /* Store previosly store array if any */
     prevRespFilelds = HTTPCli_setResponseFields(httpClient, ids);
 
     /* Read response headers */
-    while ((id = HTTPCli_getResponseField(httpClient, buf, sizeof(buf), &moreFlag))
-            != HTTPCli_FIELD_ID_END)
+    while ((id = HTTPCli_getResponseField(httpClient, buf, sizeof(buf),
+                                          &moreFlag)) != HTTPCli_FIELD_ID_END)
     {
 
-        if(id == 0)
+        if (id == 0)
         {
-            if(!strncmp(buf, "close", sizeof("close")))
+            if (!strncmp(buf, "close", sizeof("close")))
             {
                 UART_PRINT("Connection terminated by server\n\r");
             }
@@ -52,26 +50,27 @@ int FlushHTTPResponse(HTTPCli_Handle httpClient)
     }
 
     /* Restore previosuly store array if any */
-    HTTPCli_setResponseFields(httpClient, (const char **)prevRespFilelds);
+    HTTPCli_setResponseFields(httpClient, (const char **) prevRespFilelds);
 
-    while(1)
+    while (1)
     {
         /* Read response data/body */
         /* Note:
-                moreFlag will be set to 1 by HTTPCli_readResponseBody() call, if more
-                data is available Or in other words content length > length of buffer.
-                The remaining data will be read in subsequent call to HTTPCli_readResponseBody().
-                Please refer HTTP Client Libary API documenation @ref HTTPCli_readResponseBody
-                for more information.
-        */
+         moreFlag will be set to 1 by HTTPCli_readResponseBody() call, if more
+         data is available Or in other words content length > length of buffer.
+         The remaining data will be read in subsequent call to HTTPCli_readResponseBody().
+         Please refer HTTP Client Libary API documenation @ref HTTPCli_readResponseBody
+         for more information.
+         */
         HTTPCli_readResponseBody(httpClient, buf, sizeof(buf) - 1, &moreFlag);
         ASSERT_ON_ERROR(len);
 
-        if ((len - 2) >= 0 && buf[len - 2] == '\r' && buf [len - 1] == '\n'){
+        if ((len - 2) >= 0 && buf[len - 2] == '\r' && buf[len - 1] == '\n')
+        {
             break;
         }
 
-        if(!moreFlag)
+        if (!moreFlag)
         {
             /* There no more data. break the loop. */
             break;
@@ -79,7 +78,6 @@ int FlushHTTPResponse(HTTPCli_Handle httpClient)
     }
     return 0;
 }
-
 
 //*****************************************************************************
 //
@@ -95,15 +93,15 @@ int ParseJSONData(char *ptr)
     long lRetVal = 0;
     int noOfToken;
     jsmn_parser parser;
-    jsmntok_t   *tokenList;
-
+    jsmntok_t *tokenList;
 
     /* Initialize JSON PArser */
     jsmn_init(&parser);
 
     /* Get number of JSON token in stream as we we dont know how many tokens need to pass */
-    noOfToken = jsmn_parse(&parser, (const char *)ptr, strlen((const char *)ptr), NULL, 10);
-    if(noOfToken <= 0)
+    noOfToken = jsmn_parse(&parser, (const char *) ptr,
+                           strlen((const char *) ptr), NULL, 10);
+    if (noOfToken <= 0)
     {
         UART_PRINT("Failed to initialize JSON parser\n\r");
         return -1;
@@ -111,8 +109,8 @@ int ParseJSONData(char *ptr)
     }
 
     /* Allocate memory to store token */
-    tokenList = (jsmntok_t *) malloc(noOfToken*sizeof(jsmntok_t));
-    if(tokenList == NULL)
+    tokenList = (jsmntok_t *) malloc(noOfToken * sizeof(jsmntok_t));
+    if (tokenList == NULL)
     {
         UART_PRINT("Failed to allocate memory\n\r");
         return -1;
@@ -120,8 +118,9 @@ int ParseJSONData(char *ptr)
 
     /* Initialize JSON Parser again */
     jsmn_init(&parser);
-    noOfToken = jsmn_parse(&parser, (const char *)ptr, strlen((const char *)ptr), tokenList, noOfToken);
-    if(noOfToken < 0)
+    noOfToken = jsmn_parse(&parser, (const char *) ptr,
+                           strlen((const char *) ptr), tokenList, noOfToken);
+    if (noOfToken < 0)
     {
         UART_PRINT("Failed to parse JSON tokens\n\r");
         lRetVal = noOfToken;
@@ -137,86 +136,86 @@ int ParseJSONData(char *ptr)
 }
 
 /*!
-    \brief This function read respose from server and dump on console
+ \brief This function read respose from server and dump on console
 
-    \param[in]      httpClient - HTTP Client object
+ \param[in]      httpClient - HTTP Client object
 
-    \return         0 on success else -ve
+ \return         0 on success else -ve
 
-    \note
+ \note
 
-    \warning
-*/
+ \warning
+ */
 int readResponse(HTTPCli_Handle httpClient)
 {
     long lRetVal = 0;
     int bytesRead = 0;
     int id = 0;
-    unsigned long len = 228;  //@TODO 重要：这里决定了收到的数据的长度  数值靠数   包括外面的大括号  114
+    unsigned long len = 200;  //@TODO 重要：这里决定了收到的数据的长度  数值靠数   包括外面的大括号  114
     int json = 0;
-    char *dataBuffer=NULL;
+    char *dataBuffer = NULL;
     bool moreFlags = 1;
     const char *ids[4] = {
-                            HTTPCli_FIELD_NAME_CONTENT_LENGTH,
-                            HTTPCli_FIELD_NAME_CONNECTION,
-                            HTTPCli_FIELD_NAME_CONTENT_TYPE,
-                            NULL
-                         };
+    HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+                           HTTPCli_FIELD_NAME_CONNECTION,
+                           HTTPCli_FIELD_NAME_CONTENT_TYPE,
+                           NULL };
 
     /* Read HTTP POST request status code */
     lRetVal = HTTPCli_getResponseStatus(httpClient);
-    if(lRetVal > 0)
+    if (lRetVal > 0)
     {
-        switch(lRetVal)
+        switch (lRetVal)
         {
         case 200:
         {
 
             UART_PRINT("HTTP Status 200\n\r");
             /*
-                 Set response header fields to filter response headers. All
-                  other than set by this call we be skipped by library.
+             Set response header fields to filter response headers. All
+             other than set by this call we be skipped by library.
              */
-            HTTPCli_setResponseFields(httpClient, (const char **)ids);
+            HTTPCli_setResponseFields(httpClient, (const char **) ids);
 
             /* Read filter response header and take appropriate action. */
             /* Note:
-                    1. id will be same as index of fileds in filter array setted
-                    in previous HTTPCli_setResponseFields() call.
+             1. id will be same as index of fileds in filter array setted
+             in previous HTTPCli_setResponseFields() call.
 
-                    2. moreFlags will be set to 1 by HTTPCli_getResponseField(), if  field
-                    value could not be completely read. A subsequent call to
-                    HTTPCli_getResponseField() will read remaining field value and will
-                    return HTTPCli_FIELD_ID_DUMMY. Please refer HTTP Client Libary API
-                    documenation @ref HTTPCli_getResponseField for more information.
+             2. moreFlags will be set to 1 by HTTPCli_getResponseField(), if  field
+             value could not be completely read. A subsequent call to
+             HTTPCli_getResponseField() will read remaining field value and will
+             return HTTPCli_FIELD_ID_DUMMY. Please refer HTTP Client Libary API
+             documenation @ref HTTPCli_getResponseField for more information.
              */
-            while((id = HTTPCli_getResponseField(httpClient, (char *)g_buff, sizeof(g_buff), &moreFlags))
+            while ((id = HTTPCli_getResponseField(httpClient, (char *) g_buff,
+                                                  sizeof(g_buff), &moreFlags))
                     != HTTPCli_FIELD_ID_END)
             {
-                switch(id)
+                switch (id)
                 {
                 case 0: /* HTTPCli_FIELD_NAME_CONTENT_LENGTH */
                 {
-                    len = strtoul((char *)g_buff, NULL, 0);
+                    len = strtoul((char *) g_buff, NULL, 0);
                 }
-                break;
+                    break;
                 case 1: /* HTTPCli_FIELD_NAME_CONNECTION */
                 {
                 }
-                break;
+                    break;
                 case 2: /* HTTPCli_FIELD_NAME_CONTENT_TYPE */
                 {
-                    if(!strncmp((const char *)g_buff, "application/json",
-                            sizeof("application/json")))
+                    if (!strncmp((const char *) g_buff, "application/json",
+                                 sizeof("application/json")))
                     {
                         json = 1;
                     }
                     else
                     {
                         /* Note:
-                                Developers are advised to use appropriate
-                                content handler. In this example all content
-                                type other than json are treated as plain text.
+                         Developers are advised to use appropriate
+                         content handler. In this example all content
+                         type other than json are treated as plain text.
                          */
                         json = 0;
                     }
@@ -224,7 +223,7 @@ int readResponse(HTTPCli_Handle httpClient)
                     UART_PRINT(" : ");
                     UART_PRINT("application/json\n\r");
                 }
-                break;
+                    break;
                 default:
                 {
                     UART_PRINT("Wrong filter id\n\r");
@@ -234,10 +233,10 @@ int readResponse(HTTPCli_Handle httpClient)
                 }
             }
             bytesRead = 0;
-            if(len > sizeof(g_buff))
+            if (len > sizeof(g_buff))
             {
                 dataBuffer = (char *) malloc(len);
-                if(dataBuffer)
+                if (dataBuffer)
                 {
                     UART_PRINT("Failed to allocate memory\n\r");
                     lRetVal = -1;
@@ -246,40 +245,43 @@ int readResponse(HTTPCli_Handle httpClient)
             }
             else
             {
-                dataBuffer = (char *)g_buff;
+                dataBuffer = (char *) g_buff;
             }
 
             /* Read response data/body */
             /* Note:
-                    moreFlag will be set to 1 by HTTPCli_readResponseBody() call, if more
-                    data is available Or in other words content length > length of buffer.
-                    The remaining data will be read in subsequent call to HTTPCli_readResponseBody().
-                    Please refer HTTP Client Libary API documenation @ref HTTPCli_readResponseBody
-                    for more information
+             moreFlag will be set to 1 by HTTPCli_readResponseBody() call, if more
+             data is available Or in other words content length > length of buffer.
+             The remaining data will be read in subsequent call to HTTPCli_readResponseBody().
+             Please refer HTTP Client Libary API documenation @ref HTTPCli_readResponseBody
+             for more information
 
              */
-            bytesRead = HTTPCli_readResponseBody(httpClient, (char *)dataBuffer, len, &moreFlags);
+            bytesRead = HTTPCli_readResponseBody(httpClient,
+                                                 (char *) dataBuffer, len,
+                                                 &moreFlags);
 
             //printf("dataBuffer:%s\n",dataBuffer);
 
-            if(bytesRead < 0)
+            if (bytesRead < 0)
             {
                 UART_PRINT("Failed to received response body\n\r");
                 lRetVal = bytesRead;
                 goto end;
             }
-            else if( bytesRead < len || moreFlags)
+            else if (bytesRead < len || moreFlags)
             {
-                UART_PRINT("Mismatch in content length and received data length\n\r");
+                UART_PRINT(
+                        "Mismatch in content length and received data length\n\r");
                 goto end;
             }
             dataBuffer[bytesRead] = '\0';
 
-            if(json)
+            if (json)
             {
                 /* Parse JSON data */
                 lRetVal = ParseJSONData(dataBuffer);
-                if(lRetVal < 0)
+                if (lRetVal < 0)
                 {
                     goto end;
                 }
@@ -290,22 +292,22 @@ int readResponse(HTTPCli_Handle httpClient)
             }
 
         }
-        break;
+            break;
 
         case 404:
             UART_PRINT("File not found. \r\n");
             /* Handle response body as per requirement.
-                  Note:
-                    Developers are advised to take appopriate action for HTTP
-                    return status code else flush the response body.
-                    In this example we are flushing response body in default
-                    case for all other than 200 HTTP Status code.
+             Note:
+             Developers are advised to take appopriate action for HTTP
+             return status code else flush the response body.
+             In this example we are flushing response body in default
+             case for all other than 200 HTTP Status code.
              */
         default:
             /* Note:
-              Need to flush received buffer explicitly as library will not do
-              for next request.Apllication is responsible for reading all the
-              data.
+             Need to flush received buffer explicitly as library will not do
+             for next request.Apllication is responsible for reading all the
+             data.
              */
             FlushHTTPResponse(httpClient);
             break;
@@ -319,8 +321,7 @@ int readResponse(HTTPCli_Handle httpClient)
 
     lRetVal = 0;
 
-end:
-    if(len > sizeof(g_buff) && (dataBuffer != NULL))
+    end: if (len > sizeof(g_buff) && (dataBuffer != NULL))
     {
         free(dataBuffer);
     }
@@ -342,59 +343,60 @@ int HTTPPostMethod(HTTPCli_Handle httpClient)
     bool lastFlag = 1;
     char tmpBuf[4];
     long lRetVal = 0;
-    HTTPCli_Field fields[4] = {
-                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
-                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "application/json"},
-                                {NULL, NULL}
-                            };
-
+    HTTPCli_Field fields[4] = { { HTTPCli_FIELD_NAME_HOST, HOST_NAME },
+                                {
+                                HTTPCli_FIELD_NAME_ACCEPT,
+                                  "*/*" },
+                                { HTTPCli_FIELD_NAME_CONTENT_TYPE,
+                                  "application/json" },
+                                { NULL, NULL } };
 
     /* Set request header fields to be send for HTTP request. */
     HTTPCli_setRequestFields(httpClient, fields);
 
     /* Send POST method request. */
     /* Here we are setting moreFlags = 1 as there are some more header fields need to send
-       other than setted in previous call HTTPCli_setRequestFields() at later stage.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
-    */
+     other than setted in previous call HTTPCli_setRequestFields() at later stage.
+     Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
+     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST, POST_REQUEST_URI, moreFlags);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_POST,
+    POST_REQUEST_URI,
+                                  moreFlags);
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
     //@TODO
-    sprintf((char *)tmpBuf, "%d", (sizeof(flowerStatusData)-1));
+    sprintf((char *) tmpBuf, "%d", (sizeof(flowerStatusData) - 1));
 
     /* Here we are setting lastFlag = 1 as it is last header field.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
-    */
+     Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
+     */
     lastFlag = 1;
-    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (const char *)tmpBuf, lastFlag);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+                                (const char *) tmpBuf, lastFlag);
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request header.\n\r");
         return lRetVal;
     }
 
-
     /* Send POST data/body */  //@TODO
-    lRetVal = HTTPCli_sendRequestBody(httpClient, flowerStatusData, (sizeof(flowerStatusData)-1));
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequestBody(httpClient, flowerStatusData,
+                                      (sizeof(flowerStatusData) - 1));
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP POST request body.\n\r");
         return lRetVal;
     }
 
-
     lRetVal = readResponse(httpClient);
 
     return lRetVal;
 }
-
 
 //*****************************************************************************
 //
@@ -409,25 +411,26 @@ int HTTPDeleteMethod(HTTPCli_Handle httpClient)
 {
 
     long lRetVal = 0;
-    HTTPCli_Field fields[3] = {
-                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
-                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {NULL, NULL}
-                            };
+    HTTPCli_Field fields[3] = { { HTTPCli_FIELD_NAME_HOST, HOST_NAME },
+                                {
+                                HTTPCli_FIELD_NAME_ACCEPT,
+                                  "*/*" },
+                                { NULL, NULL } };
     bool moreFlags;
-
 
     /* Set request header fields to be send for HTTP request. */
     HTTPCli_setRequestFields(httpClient, fields);
 
     /* Send DELETE method request. */
     /* Here we are setting moreFlags = 0 as there are no more header fields need to send
-       at later stage. Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest
-       for more information.
-    */
+     at later stage. Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest
+     for more information.
+     */
     moreFlags = 0;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_DELETE, DELETE_REQUEST_URI, moreFlags);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_DELETE,
+    DELETE_REQUEST_URI,
+                                  moreFlags);
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP DELETE request header.\n\r");
         return lRetVal;
@@ -452,48 +455,49 @@ int HTTPPutMethod(HTTPCli_Handle httpClient)
 
     long lRetVal = 0;
     HTTPCli_Field fields[4] = {
-                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
-                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/html"},
-                                {NULL, NULL}
-                            };
-    bool        moreFlags = 1;
-    bool        lastFlag = 1;
-    char        tmpBuf[4];
-
+            { HTTPCli_FIELD_NAME_HOST, HOST_NAME }, { HTTPCli_FIELD_NAME_ACCEPT,
+                                                      "*/*" },
+            { HTTPCli_FIELD_NAME_CONTENT_TYPE, "text/html" }, { NULL, NULL } };
+    bool moreFlags = 1;
+    bool lastFlag = 1;
+    char tmpBuf[4];
 
     /* Set request header fields to be send for HTTP request. */
     HTTPCli_setRequestFields(httpClient, fields);
 
     /* Send PUT method request. */
     /* Here we are setting moreFlags = 1 as there are some more header fields need to send
-       other than setted in previous call HTTPCli_setRequestFields() at later stage.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
-    */
+     other than setted in previous call HTTPCli_setRequestFields() at later stage.
+     Please refer HTTP Library API documentaion @ref HTTPCli_sendRequest for more information.
+     */
     moreFlags = 1;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_PUT, PUT_REQUEST_URI, moreFlags);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_PUT,
+    PUT_REQUEST_URI,
+                                  moreFlags);
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP PUT request header.\n\r");
         return lRetVal;
     }
 
-    sprintf((char *)tmpBuf, "%d", (sizeof(PUT_DATA)-1));
+    sprintf((char *) tmpBuf, "%d", (sizeof(PUT_DATA) - 1));
 
     /* Here we are setting lastFlag = 1 as it is last header field.
-       Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
-    */
+     Please refer HTTP Library API documentaion @ref HTTPCli_sendField for more information.
+     */
     lastFlag = 1;
-    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH, (char *)tmpBuf, lastFlag);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendField(httpClient, HTTPCli_FIELD_NAME_CONTENT_LENGTH,
+                                (char *) tmpBuf, lastFlag);
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP PUT request header.\n\r");
         return lRetVal;
     }
 
     /* Send PUT data/body */
-    lRetVal = HTTPCli_sendRequestBody(httpClient, PUT_DATA, (sizeof(PUT_DATA)-1));
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequestBody(httpClient, PUT_DATA,
+                                      (sizeof(PUT_DATA) - 1));
+    if (lRetVal < 0)
     {
         UART_PRINT("Failed to send HTTP PUT request body.\n\r");
         return lRetVal;
@@ -517,38 +521,37 @@ int HTTPGetMethod(HTTPCli_Handle httpClient)
 {
 
     long lRetVal = 0;
-    HTTPCli_Field fields[4] = {
-                                {HTTPCli_FIELD_NAME_HOST, HOST_NAME},
-                                {HTTPCli_FIELD_NAME_ACCEPT, "*/*"},
-                                {HTTPCli_FIELD_NAME_CONTENT_LENGTH, "0"},
-                                {NULL, NULL}
-                            };
-    bool        moreFlags;
+    HTTPCli_Field fields[4] = { { HTTPCli_FIELD_NAME_HOST, HOST_NAME },
+                                {
+                                HTTPCli_FIELD_NAME_ACCEPT,
+                                  "*/*" },
+                                { HTTPCli_FIELD_NAME_CONTENT_LENGTH, "0" }, {
+                                        NULL, NULL } };
+    bool moreFlags;
 
     /* Set request header fields to be send for HTTP request. */
     HTTPCli_setRequestFields(httpClient, fields);
 
     /* Send GET method request. */
     /* Here we are setting moreFlags = 0 as there are no more header fields need to send
-       at later stage. Please refer HTTP Library API documentaion @ HTTPCli_sendRequest
-       for more information.
-    */
+     at later stage. Please refer HTTP Library API documentaion @ HTTPCli_sendRequest
+     for more information.
+     */
     moreFlags = 0;
-    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET, GET_REQUEST_URI, moreFlags);
-    if(lRetVal < 0)
+    lRetVal = HTTPCli_sendRequest(httpClient, HTTPCli_METHOD_GET,
+                                  GET_REQUEST_URI, moreFlags);
+    if (lRetVal < 0)
     {
+        printf("sendRequest error!\n");
         UART_PRINT("Failed to send HTTP GET request.\n\r");
         return lRetVal;
     }
 
-
     lRetVal = readResponse(httpClient);
 
+    printf("lRetVal:%d\n", lRetVal);
     return lRetVal;
 }
-
-
-
 
 //*****************************************************************************
 //
@@ -564,7 +567,6 @@ int ConnectToHTTPServer(HTTPCli_Handle httpClient)
     long lRetVal = -1;
     struct sockaddr_in addr;
 
-
 #ifdef USE_PROXY
     struct sockaddr_in paddr;
     paddr.sin_family = AF_INET;
@@ -574,10 +576,10 @@ int ConnectToHTTPServer(HTTPCli_Handle httpClient)
 #endif
 
     /* Resolve HOST NAME/IP */
-    lRetVal = sl_NetAppDnsGetHostByName((signed char *)HOST_NAME,
-                                          strlen((const char *)HOST_NAME),
-                                          &g_ulDestinationIP,SL_AF_INET);
-    if(lRetVal < 0)
+    lRetVal = sl_NetAppDnsGetHostByName((signed char *) HOST_NAME,
+                                        strlen((const char *) HOST_NAME),
+                                        &g_ulDestinationIP, SL_AF_INET);
+    if (lRetVal < 0)
     {
         ASSERT_ON_ERROR(GET_HOST_IP_FAILED);
     }
@@ -589,7 +591,7 @@ int ConnectToHTTPServer(HTTPCli_Handle httpClient)
 
     /* Testing HTTPCli open call: handle, address params only */
     HTTPCli_construct(httpClient);
-    lRetVal = HTTPCli_connect(httpClient, (struct sockaddr *)&addr, 0, NULL);
+    lRetVal = HTTPCli_connect(httpClient, (struct sockaddr *) &addr, 0, NULL);
     if (lRetVal < 0)
     {
         UART_PRINT("Connection to server failed. error(%d)\n\r", lRetVal);
@@ -602,5 +604,4 @@ int ConnectToHTTPServer(HTTPCli_Handle httpClient)
 
     return 0;
 }
-
 
