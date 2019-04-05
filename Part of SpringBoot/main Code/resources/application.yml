@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    username: mysql用户名    例如:root
+    password: mysql密码      例如:123456
+    url: jdbc:mysql://你的公网IP:端口(默认3306)/数据库名    例如：192.168.1.102:3306/mydatabese
+    driver-class-name: com.mysql.cj.jdbc.Driver
