@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="com.race604.flyrefresh:library-2.0.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/library-2.0.0.aar/9bb013a974085dbd145a9a7a8f4fe0ca/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/library-2.0.0.aar/9bb013a974085dbd145a9a7a8f4fe0ca/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.race604.flyrefresh/library/2.0.0/cd81178e38f8c460c4caccf67208b9349b318691/library-2.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

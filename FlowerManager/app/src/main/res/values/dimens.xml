@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name ="dividerHeight_1">1dp</dimen>   //recyclerView的分割线  高度为1dp
+    <dimen name ="dividerHeight_2">2dp</dimen>   //recyclerView的分割线  高度为2dp
+    <dimen name ="dividerHeight_10">10dp</dimen>   //recyclerView的分割线  高度为10dp
+</resources>

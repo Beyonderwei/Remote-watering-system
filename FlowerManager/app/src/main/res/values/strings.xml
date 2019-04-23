@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">花秘书</string>
+    <string name="uploading">添加</string>
+    <string name="img_name">请输入花卉名称</string>
+    <string name="select_img">从相册选择图片</string>
+</resources>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.hzau.xuwei.flowermanager">
+
+    //相机和SD卡权限
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!--允许联网 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!--获取GSM（2g）、WCDMA（联通3g）等网络状态的信息  -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--获取wifi网络状态的信息 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--保持CPU 运转，屏幕和键盘灯有可能是关闭的,用于文件上传和下载 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!--获取sd卡写的权限，用于文件上传和下载-->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!--允许读取手机状态 用于创建BmobInstallation-->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network_security_config">
+        <provider
+            android:authorities="com.flowermanager.cameraalbumtest.fileprovider"
+            android:name="android.support.v4.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        //可以在这里设置所有的都没有这个标题 bar
+        //每一个activity的最上面一栏的标题是可以设置的   在布局中画可以添加返回等功能
+        //如何设个置 如下面一行代码  在每activity 中设置即可  设置activity 的label属性  不过这个很丑不用
+        <activity android:name=".MainActivity"
+            android:launchMode="singleTask">  //为了返回时能返回到之前的主界面
+            //android:screenOrientation="landscape"       横屏显示
+            //android:screenOrientation="portrait"        竖屏显示
+            //android:theme="@style/Theme.AppCompat.Light.NoActionBar"    去掉上面的主题 bar
+
+            //这个是将mainactivity设置为默认启动的activity  其他的也可以设置
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".AddViewActivity" />
+        <activity android:name=".SetViewActivity" />
+        <activity android:name=".MeViewActivity" />
+        <activity android:name=".InformViewActivity" />
+        <activity android:name=".view.ListView_MainActivity" />
+        <activity android:name=".ListItemActivity">
+            //隐式跳转到ListItemActivity 界面时需要添加下面这些
+            <!--<intent-filter>-->
+                <!--<action android:name="jump_To_ListItemActivity" />  //jump_To_ListItemActivity为随意写的String-->
+
+                <!--<category android:name="android.intent.category.DEFAULT" />  //这里要改为 DEFAULT-->
+            <!--</intent-filter>-->
+        </activity>
+    </application>
+
+</manifest>
